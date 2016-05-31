@@ -1,6 +1,7 @@
 #include "csapp.h" 
 
 /* usage: ./echoclient host port */
+int portChecker(char* port);
 int main(int argc, char **argv)
 { 
 	//"server" stuff referrs to connecting to webserver, "browser" variables refer to connecting to user's browser, anything else is either local proxy data or i've forgotten to change the name
@@ -94,4 +95,29 @@ int main(int argc, char **argv)
 	}
     	exit(0); 
 } 
+
+/*
+portchecker
+takes port as string of chars
+loops through /etc/services searching for the port number
+if found, port is reserved for another service, and function returns -1
+otherwise, returns 0, indicating port is ok to use
+*/
+int portChecker(char* port){     //TODO: actually implement this
+	char* test = malloc(80);
+	char* reader;
+	FILE* services;
+	services = fopen("/etc/services","r");
+	strcat(test, " ");
+	strcat(test,port);
+	strcat(test, "/");
+	while(fgets(reader, 80, services) != NULL){
+		if(strstr(reader, test)){
+			printf("Port Reserved\n");
+			return -1;
+		}
+	}
+	return 0;
+}
+
 
