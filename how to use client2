@@ -1,0 +1,11 @@
+client2.c execution syntax
+this needs to be rewritten entirely, but it works fine for basic testing
+./progname webaddr connport proxyport
+
+webaddr- web address to connect to, e.g. www.ics.uci.edu (no http://, no suffix)
+
+connport - port to connect to web address on, pretty much always 80
+
+proxyport - port for proxy to listen for connections on (i just use something between 5000-6000, though we'll have to safe it so they can't use reserved ports)
+
+most of this needs to be read from the HTTP header in the final submission obviously, except for proxyport, which we'll still pass through args
