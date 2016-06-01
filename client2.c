@@ -2,7 +2,7 @@
 #include <string.h>
 
 /* usage: ./echoclient host port */
-int portChecker(char* port);
+//int portChecker(char* port);
 int main(int argc, char **argv)
 {
 	//"server" stuff referrs to connecting to webserver, "browser" variables refer to connecting to user's browser, anything else is either local proxy data or i've forgotten to change the name
@@ -28,8 +28,11 @@ int main(int argc, char **argv)
 		Rio_readlineb(&browserData, hostBuffer, MAXLINE);
 		Fputs(hostBuffer, stdout);
 		host = hostBuffer+6;
+		int hlen = strlen(host);
+		host[hlen-1] = '\0';
+		host[hlen-2] = '\0';
 		printf("ATTEMPT CONN: %s\n", host);
-		serverfd = Open_clientfd(host, argv[2]);
+		serverfd = Open_clientfd(hostBuffer+6, argv[2]);
 		Rio_readinitb(&serverData, serverfd);
 		Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));
 		Rio_writen(serverfd, hostBuffer, strlen(hostBuffer));
@@ -40,10 +43,9 @@ int main(int argc, char **argv)
 		//now send the remainder of requests to the server
 		printf(":"); fflush(stdout);
 
-		int i = 0;
+		//int i = 0;
 		int checkStatus = 1;
 		while (checkStatus!=0) {
-			if(strcmp(serverBuffer, "\r\n") == 0) break;
 			Rio_readlineb(&browserData, serverBuffer, MAXLINE);	//GET request from browser
 			Fputs(serverBuffer, stdout);
 			Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));  //sends data to server, get rid of placeholder code above this
@@ -122,9 +124,9 @@ int main(int argc, char **argv)
 		Close(browserfd);
 		Close(browserreadfd);
 	}
-<<<<<<< Updated upstream
-    	exit(0); 
-} 
+
+    	exit(0);
+}
 
 /*
 portchecker
@@ -132,7 +134,7 @@ takes port as string of chars
 loops through /etc/services searching for the port number
 if found, port is reserved for another service, and function returns -1
 otherwise, returns 0, indicating port is ok to use
-*/
+
 int portChecker(char* port){     //TODO: actually implement this
 	char* test = malloc(80);
 	char* reader;
@@ -150,8 +152,6 @@ int portChecker(char* port){     //TODO: actually implement this
 	return 0;
 }
 
-
-=======
     	exit(0);
 }
->>>>>>> Stashed changes
+*/
