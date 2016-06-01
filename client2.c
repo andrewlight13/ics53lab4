@@ -22,6 +22,8 @@ int main(int argc, char **argv)
 	while(1){
 		//serverfd = Open_clientfd(argv[1], argv[2]);
 		
+		int bufferSize, i;
+		char temp[MAXLINE];
 		browserreadfd = Accept(browserfd, (SA *)&clientaddr, &clientlen);	//then just do stuff with clientaddr for logging, see main.c for info on that
 		
 		//Rio_readinitb(&serverData, serverfd);
@@ -31,9 +33,9 @@ int main(int argc, char **argv)
 
 		//set up connection to host
 		Rio_readlineb(&browserData, serverBuffer, MAXLINE);
-		//Fputs(serverBuffer, stdout);
+		Fputs(serverBuffer, stdout);
 		Rio_readlineb(&browserData, hostBuffer, MAXLINE);
-		//Fputs(hostBuffer, stdout);
+		Fputs(hostBuffer, stdout);
 		host = hostBuffer+6;
 		int hlen = strlen(host);
 		host[hlen-1] = '\0';
@@ -57,13 +59,28 @@ int main(int argc, char **argv)
 
 		//int i = 0;
 		int checkStatus = 1;
+		bufferSize = 0;
 		while (checkStatus!=0) {
 			Rio_readlineb(&browserData, serverBuffer, MAXLINE);	//GET request from browser
-			//Fputs(serverBuffer, stdout);
+			Fputs(serverBuffer, stdout);
+
+			if(strstr(serverBuffer, "Content-Length:")){
+				strcpy(temp,serverBuffer);
+				strcpy(temp, strtok(temp, " \n\t\r"));
+				strcpy(temp, strtok(NULL, " \n\t\r"));
+				bufferSize = atoi(temp);
+			}
 			Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));  //sends data to server, get rid of placeholder code above this
 			if(strcmp(serverBuffer, "\r\n") == 0) break;
 		}
-
+		
+		if(bufferSize > 0){
+			for(i = 0; i < bufferSize; i++){
+				Rio_readnb(&browserData,serverBuffer,1);
+				//printf("%c",serverBuffer[0]);
+				Rio_writen(serverfd, serverBuffer, 1);
+			}
+		}
 		//Thought that this had to go here. delete
 		//serverfd = Open_clientfd(host, argv[2]);
 		//Rio_readinitb(&serverData, serverfd);
@@ -75,8 +92,8 @@ int main(int argc, char **argv)
 		printf("IF IT HANGS HERE, IT'S OPENLAB'S FAULT\n");
 		Rio_readlineb(&serverData,serverBuffer,MAXLINE);
 		checkStatus = 1;
-		int bufferSize;
-		char temp[MAXLINE];
+		bufferSize = 0;
+		
 		/*if(strstr(header,"HTTP/1.0 200 OK") == 0 && strstr(header,"HTTP/1.1 200 OK") == 0){	//this probably isn't necessary, but if we need to detect HTTP errors proxyside, uncomment this and update
 			Fputs(header,stdout);																//but we SHOULD be able to just pass the error data back
 			while(checkStatus != 0){	//loop through and print whole header
@@ -124,7 +141,7 @@ int main(int argc, char **argv)
 		}
 		//printf("reading message of: %d bytes\n", bufferSize);
 		//}
-		int i;
+		i = 0;
 		if(bufferSize > 0){
 			for(i = 0; i < bufferSize; i++){
 				Rio_readnb(&serverData,serverBuffer,1);
