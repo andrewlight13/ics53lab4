@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 		host[hlen-1] = '\0';
 		host[hlen-2] = '\0';
 		printf("ATTEMPT CONN: %s\n", host);
-		serverfd = Open_clientfd(hostBuffer+6, argv[2]);
+		serverfd = Open_clientfd(host, argv[2]);
 		Rio_readinitb(&serverData, serverfd);
 		Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));
 		Rio_writen(serverfd, hostBuffer, strlen(hostBuffer));
