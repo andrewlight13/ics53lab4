@@ -13,13 +13,13 @@ int main(int argc, char **argv)
 	char *stringIP;
 	stringIP = malloc(20);
 	struct hostent *ip;
-	if(portChecker(argv[3]) == -1){
+	if(portChecker(argv[1]) == -1){
 		return;	//port is reserved, error message given in function
 	}
 	rio_t serverData;
 	rio_t browserData;
 	//rio_t browserData_init;
-    browserfd = Open_listenfd(argv[3]);
+    browserfd = Open_listenfd(argv[1]);
 	while(1){
 		//serverfd = Open_clientfd(argv[1], argv[2]);
 
@@ -42,7 +42,8 @@ int main(int argc, char **argv)
 		host[hlen-1] = '\0';
 		host[hlen-2] = '\0';
 		//printf("ATTEMPT CONN: %s\n", host);
-		serverfd = Open_clientfd(host, argv[2]);
+		char connport[3]; connport[0]='8';connport[1]='0';connport[2]='\0';
+		serverfd = Open_clientfd(host, connport);
 		Rio_readinitb(&serverData, serverfd);
 		Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));
 		Rio_writen(serverfd, hostBuffer, strlen(hostBuffer));
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
 			Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));  //sends data to server, get rid of placeholder code above this
 			if(strcmp(serverBuffer, "\r\n") == 0) break;
 		}
-		
+
 		if(bufferSize > 0){
 			for(i = 0; i < bufferSize; i++){
 				Rio_readnb(&browserData,serverBuffer,1);
@@ -82,40 +83,13 @@ int main(int argc, char **argv)
 				Rio_writen(serverfd, serverBuffer, 1);
 			}
 		}
-		//Thought that this had to go here. delete
-		//serverfd = Open_clientfd(host, argv[2]);
-		//Rio_readinitb(&serverData, serverfd);
-		//Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));  //sends data to server
 
-		//check first line for 200 OK and HTTP version
-		//ok not sure this is neccessary, so commented it out
-		//Rio_readlineb(&serverData, header,MAXLINE);
-		printf("IF IT HANGS HERE, IT'S OPENLAB'S FAULT\n");
+		//printf("IF IT HANGS HERE, IT'S OPENLAB'S FAULT\n");
 		Rio_readlineb(&serverData,serverBuffer,MAXLINE);
 		checkStatus = 1;
 		bufferSize = 0;
-		
-		/*if(strstr(header,"HTTP/1.0 200 OK") == 0 && strstr(header,"HTTP/1.1 200 OK") == 0){	//this probably isn't necessary, but if we need to detect HTTP errors proxyside, uncomment this and update
-			Fputs(header,stdout);																//but we SHOULD be able to just pass the error data back
-			while(checkStatus != 0){	//loop through and print whole header
-				Rio_readlineb(&serverData, serverBuffer, MAXLINE);
-				Fputs(serverBuffer,stdout);
-				if(strcmp(serverBuffer,"\r\n")== 0){	//how to detect end of header
-				  checkStatus = 0;
-				}
-				else if(strstr(serverBuffer, "Content-Length:")){
-					strcpy(temp,serverBuffer);
-					strcpy(temp, strtok(temp, " \n\t\r"));
-					strcpy(temp, strtok(NULL, " \n\t\r"));
-					bufferSize = atoi(temp);
-				}
-			}
-			//Close(serverfd);
-			//return;        //ideally, just print the whole header in here instead of returning, but this'll work for now
-	    }*/
-		//else{
-			//Fputs(header,stdout);
-		//Fputs(serverBuffer,stdout);	//TODO: ALL fputs should be changed to write back to client instead of to stdout (but for testing purposes this works)
+
+		//TODO: ALL fputs should be changed to write back to client instead of to stdout (but for testing purposes this works)
 		Rio_writen(browserreadfd, serverBuffer, strlen(serverBuffer));
 		while(checkStatus != 0){
 			Rio_readlineb(&serverData, serverBuffer, MAXLINE);	//RESPONSE message
@@ -150,12 +124,7 @@ int main(int argc, char **argv)
 		}
 		Rio_writen(browserreadfd, "\r\n", 2);
 		printf("wrote %d bytes to client\n", bufferSize);
-		//TODO: implement logging around here somewhere
-		//printf("|||reached end of buffer\n");
-		/*Rio_readlineb(&browserData,serverBuffer, MAXLINE);
-		if(strlen(serverBuffer) > 0){	//ok, so this DOESNT work, but basically
-			printf("serverbuffer now |%s|\n", serverBuffer);	//browser sockets are getting closed too quickly, requests for images are getting lost
-		}*/
+		
 		//printf("logging here, with date = |%s|, size = |%d|, domain = |%s|, and IP = |%s|\n", date, bufferSize, requestAddr, stringIP);
 		format_log_entry(date, stringIP, requestAddr, temp);
 		Close(serverfd);
