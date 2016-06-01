@@ -3,6 +3,7 @@
 
 /* usage: ./echoclient host port */
 int portChecker(char* port);
+int format_log_entry(char* date, char* ip, char* url, char* size);
 int main(int argc, char **argv)
 {
 	//"server" stuff referrs to connecting to webserver, "browser" variables refer to connecting to user's browser, anything else is either local proxy data or i've forgotten to change the name
@@ -21,11 +22,11 @@ int main(int argc, char **argv)
     browserfd = Open_listenfd(argv[3]);
 	while(1){
 		//serverfd = Open_clientfd(argv[1], argv[2]);
-		
+
 		int bufferSize, i;
 		char temp[MAXLINE];
 		browserreadfd = Accept(browserfd, (SA *)&clientaddr, &clientlen);	//then just do stuff with clientaddr for logging, see main.c for info on that
-		
+
 		//Rio_readinitb(&serverData, serverfd);
 		Rio_readinitb(&browserData, browserreadfd);
 		//Rio_readinitb(&browserData_init, browserreadfd);
@@ -33,9 +34,9 @@ int main(int argc, char **argv)
 
 		//set up connection to host
 		Rio_readlineb(&browserData, serverBuffer, MAXLINE);
-		Fputs(serverBuffer, stdout);
+		//Fputs(serverBuffer, stdout);
 		Rio_readlineb(&browserData, hostBuffer, MAXLINE);
-		Fputs(hostBuffer, stdout);
+		//Fputs(hostBuffer, stdout);
 		host = hostBuffer+6;
 		int hlen = strlen(host);
 		host[hlen-1] = '\0';
@@ -62,7 +63,7 @@ int main(int argc, char **argv)
 		bufferSize = 0;
 		while (checkStatus!=0) {
 			Rio_readlineb(&browserData, serverBuffer, MAXLINE);	//GET request from browser
-			Fputs(serverBuffer, stdout);
+			//Fputs(serverBuffer, stdout);
 
 			if(strstr(serverBuffer, "Content-Length:")){
 				strcpy(temp,serverBuffer);
@@ -108,9 +109,7 @@ int main(int argc, char **argv)
 					strcpy(temp, strtok(NULL, " \n\t\r"));
 					bufferSize = atoi(temp);
 				}
-
 			}
-
 			//Close(serverfd);
 			//return;        //ideally, just print the whole header in here instead of returning, but this'll work for now
 	    }*/
@@ -157,7 +156,8 @@ int main(int argc, char **argv)
 		if(strlen(serverBuffer) > 0){	//ok, so this DOESNT work, but basically
 			printf("serverbuffer now |%s|\n", serverBuffer);	//browser sockets are getting closed too quickly, requests for images are getting lost
 		}*/
-		printf("logging here, with date = |%s|, size = |%d|, domain = |%s|, and IP = |%s|\n", date, bufferSize, requestAddr, stringIP);
+		//printf("logging here, with date = |%s|, size = |%d|, domain = |%s|, and IP = |%s|\n", date, bufferSize, requestAddr, stringIP);
+		format_log_entry(date, stringIP, requestAddr, temp);
 		Close(serverfd);
 		//Close(browserfd);
 		Close(browserreadfd);
@@ -190,5 +190,19 @@ int portChecker(char* port){     //TODO: actually implement this
 		}
 	}
 	fclose(inputFile);
+	return 0;
+}
+
+int format_log_entry(char* date, char* ip, char* url, char* size) {
+	FILE *outfile = Fopen("proxy.log", "a");
+	Fputs(date, outfile);
+	Fputs(": ", outfile);
+	Fputs(ip, outfile);
+	Fputs(" ", outfile);
+	Fputs(url, outfile);
+	Fputs(" ", outfile);
+	Fputs(size, outfile);
+	Fputs("\n", outfile);
+	fclose(outfile);
 	return 0;
 }
