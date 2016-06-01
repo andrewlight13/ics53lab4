@@ -1,7 +1,11 @@
+//Light, Andrew: 11712029
+//Roke, Adam: 48266987
+//Lab 4
+//Last Modified: 5/31/2016
 #include "csapp.h"
 #include <string.h>
 
-/* usage: ./echoclient host port */
+/* usage: ./echoclient port */
 int portChecker(char* port);
 int format_log_entry(char* date, char* ip, char* url, char* size);
 int main(int argc, char **argv)
@@ -45,6 +49,8 @@ int main(int argc, char **argv)
 		char connport[3]; connport[0]='8';connport[1]='0';connport[2]='\0';
 		serverfd = Open_clientfd(host, connport);
 		Rio_readinitb(&serverData, serverfd);
+		host[hlen-1] = '\n';
+		host[hlen-2] = '\r';
 		Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));
 		Rio_writen(serverfd, hostBuffer, strlen(hostBuffer));
 		strcpy(requestAddr, serverBuffer);
@@ -124,7 +130,7 @@ int main(int argc, char **argv)
 		}
 		Rio_writen(browserreadfd, "\r\n", 2);
 		printf("wrote %d bytes to client\n", bufferSize);
-		
+
 		//printf("logging here, with date = |%s|, size = |%d|, domain = |%s|, and IP = |%s|\n", date, bufferSize, requestAddr, stringIP);
 		format_log_entry(date, stringIP, requestAddr, temp);
 		Close(serverfd);
