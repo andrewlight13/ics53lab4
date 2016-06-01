@@ -2,7 +2,7 @@
 #include <string.h>
 
 /* usage: ./echoclient host port */
-//int portChecker(char* port);
+int portChecker(char* port);
 int main(int argc, char **argv)
 {
 	//"server" stuff referrs to connecting to webserver, "browser" variables refer to connecting to user's browser, anything else is either local proxy data or i've forgotten to change the name
@@ -12,6 +12,9 @@ int main(int argc, char **argv)
 	char *stringIP;
 	stringIP = malloc(20);
 	struct hostent *ip;
+	if(portChecker(argv[3]) == -1){
+		return;	//port is reserved, error message given in function
+	}
 	rio_t serverData;
 	rio_t browserData;
 	//rio_t browserData_init;
@@ -28,14 +31,14 @@ int main(int argc, char **argv)
 
 		//set up connection to host
 		Rio_readlineb(&browserData, serverBuffer, MAXLINE);
-		Fputs(serverBuffer, stdout);
+		//Fputs(serverBuffer, stdout);
 		Rio_readlineb(&browserData, hostBuffer, MAXLINE);
-		Fputs(hostBuffer, stdout);
+		//Fputs(hostBuffer, stdout);
 		host = hostBuffer+6;
 		int hlen = strlen(host);
 		host[hlen-1] = '\0';
 		host[hlen-2] = '\0';
-		printf("ATTEMPT CONN: %s\n", host);
+		//printf("ATTEMPT CONN: %s\n", host);
 		serverfd = Open_clientfd(host, argv[2]);
 		Rio_readinitb(&serverData, serverfd);
 		Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));
@@ -43,8 +46,8 @@ int main(int argc, char **argv)
 		strcpy(requestAddr, serverBuffer);
 		strcpy(requestAddr, strtok(requestAddr, " \n\t\r"));
 		strcpy(requestAddr, strtok(NULL, " \n\t\r"));
-		printf("url request now |%s|\n", requestAddr);
-		printf("CONNECTION ESTABLISHED TO : %s\n", host);
+		//printf("url request now |%s|\n", requestAddr);
+		//printf("CONNECTION ESTABLISHED TO : %s\n", host);
 		//ip = Gethostbyname((const char *)&clientaddr.sin_addr.s_addr, sizeof(clientaddr.sin_addr.s_addr), AF_INET);
 		//ip = Gethostbyname((const char *)&clientaddr.sin_addr.s_addr);
 		Inet_ntop(AF_INET, &clientaddr.sin_addr.s_addr, stringIP, 20);
@@ -56,7 +59,7 @@ int main(int argc, char **argv)
 		int checkStatus = 1;
 		while (checkStatus!=0) {
 			Rio_readlineb(&browserData, serverBuffer, MAXLINE);	//GET request from browser
-			Fputs(serverBuffer, stdout);
+			//Fputs(serverBuffer, stdout);
 			Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));  //sends data to server, get rid of placeholder code above this
 			if(strcmp(serverBuffer, "\r\n") == 0) break;
 		}
@@ -96,15 +99,15 @@ int main(int argc, char **argv)
 	    }*/
 		//else{
 			//Fputs(header,stdout);
-		Fputs(serverBuffer,stdout);	//TODO: ALL fputs should be changed to write back to client instead of to stdout (but for testing purposes this works)
+		//Fputs(serverBuffer,stdout);	//TODO: ALL fputs should be changed to write back to client instead of to stdout (but for testing purposes this works)
 		Rio_writen(browserreadfd, serverBuffer, strlen(serverBuffer));
 		while(checkStatus != 0){
 			Rio_readlineb(&serverData, serverBuffer, MAXLINE);	//RESPONSE message
-			Fputs(serverBuffer,stdout);
-			Rio_writen(browserreadfd, serverBuffer, strlen(serverBuffer));
-			if(strcmp(serverBuffer,"\r\n")== 0){	//how to detect end of header
-			  checkStatus = 0;
-			  }
+				//Fputs(serverBuffer,stdout);
+				Rio_writen(browserreadfd, serverBuffer, strlen(serverBuffer));
+				if(strcmp(serverBuffer,"\r\n")== 0){	//how to detect end of header
+				  checkStatus = 0;
+				  }
 			else if(strstr(serverBuffer, "Content-Length:")){
 				strcpy(temp,serverBuffer);
 				strcpy(temp, strtok(temp, " \n\t\r"));
@@ -152,24 +155,23 @@ takes port as string of chars
 loops through /etc/services searching for the port number
 if found, port is reserved for another service, and function returns -1
 otherwise, returns 0, indicating port is ok to use
-
+*/
 int portChecker(char* port){     //TODO: actually implement this
-	char* test = malloc(80);
-	char* reader;
-	FILE* services;
-	services = fopen("/etc/services","r");
-	strcat(test, " ");
+	char test[80];
+	char* temp = malloc(80);
+	char* reader = malloc(80);
+	FILE* inputFile;
+	test[0] = ' ';
 	strcat(test,port);
 	strcat(test, "/");
-	while(fgets(reader, 80, services) != NULL){
+	inputFile = fopen("/etc/services","r");
+	while(fgets(reader, 80, inputFile) != NULL){
 		if(strstr(reader, test)){
 			printf("Port Reserved\n");
+			fclose(inputFile);
 			return -1;
 		}
 	}
+	fclose(inputFile);
 	return 0;
 }
-
-    	exit(0);
-}
-*/
