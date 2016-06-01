@@ -8,15 +8,19 @@ int main(int argc, char **argv)
 	//"server" stuff referrs to connecting to webserver, "browser" variables refer to connecting to user's browser, anything else is either local proxy data or i've forgotten to change the name
 	int serverfd, browserfd, browserreadfd, clientlen;
 	struct sockaddr_in clientaddr;
-	char *host, serverBuffer[MAXLINE], hostBuffer[MAXLINE], header[MAXLINE];	//header not necessary if commented out if/else isn't needed, delete if that's the case
+	char *host, serverBuffer[MAXLINE], hostBuffer[MAXLINE], header[MAXLINE], date[MAXLINE], requestAddr[MAXLINE];	//header not necessary if commented out if/else isn't needed, delete if that's the case
+	char *stringIP;
+	stringIP = malloc(20);
+	struct hostent *ip;
 	rio_t serverData;
 	rio_t browserData;
 	//rio_t browserData_init;
-
+    browserfd = Open_listenfd(argv[3]);
 	while(1){
 		//serverfd = Open_clientfd(argv[1], argv[2]);
-		browserfd = Open_listenfd(argv[3]);
+		
 		browserreadfd = Accept(browserfd, (SA *)&clientaddr, &clientlen);	//then just do stuff with clientaddr for logging, see main.c for info on that
+		
 		//Rio_readinitb(&serverData, serverfd);
 		Rio_readinitb(&browserData, browserreadfd);
 		//Rio_readinitb(&browserData_init, browserreadfd);
@@ -36,12 +40,17 @@ int main(int argc, char **argv)
 		Rio_readinitb(&serverData, serverfd);
 		Rio_writen(serverfd, serverBuffer, strlen(serverBuffer));
 		Rio_writen(serverfd, hostBuffer, strlen(hostBuffer));
-
-
+		strcpy(requestAddr, serverBuffer);
+		strcpy(requestAddr, strtok(requestAddr, " \n\t\r"));
+		strcpy(requestAddr, strtok(NULL, " \n\t\r"));
+		printf("url request now |%s|\n", requestAddr);
 		printf("CONNECTION ESTABLISHED TO : %s\n", host);
-
+		//ip = Gethostbyname((const char *)&clientaddr.sin_addr.s_addr, sizeof(clientaddr.sin_addr.s_addr), AF_INET);
+		//ip = Gethostbyname((const char *)&clientaddr.sin_addr.s_addr);
+		Inet_ntop(AF_INET, &clientaddr.sin_addr.s_addr, stringIP, 20);
+		printf("IP now |%s|\n", stringIP);
 		//now send the remainder of requests to the server
-		printf(":"); fflush(stdout);
+		//printf(":"); fflush(stdout);
 
 		//int i = 0;
 		int checkStatus = 1;
@@ -60,6 +69,7 @@ int main(int argc, char **argv)
 		//check first line for 200 OK and HTTP version
 		//ok not sure this is neccessary, so commented it out
 		//Rio_readlineb(&serverData, header,MAXLINE);
+		printf("IF IT HANGS HERE, IT'S OPENLAB'S FAULT\n");
 		Rio_readlineb(&serverData,serverBuffer,MAXLINE);
 		checkStatus = 1;
 		int bufferSize;
@@ -87,9 +97,11 @@ int main(int argc, char **argv)
 		//else{
 			//Fputs(header,stdout);
 		Fputs(serverBuffer,stdout);	//TODO: ALL fputs should be changed to write back to client instead of to stdout (but for testing purposes this works)
+		Rio_writen(browserreadfd, serverBuffer, strlen(serverBuffer));
 		while(checkStatus != 0){
 			Rio_readlineb(&serverData, serverBuffer, MAXLINE);	//RESPONSE message
 			Fputs(serverBuffer,stdout);
+			Rio_writen(browserreadfd, serverBuffer, strlen(serverBuffer));
 			if(strcmp(serverBuffer,"\r\n")== 0){	//how to detect end of header
 			  checkStatus = 0;
 			  }
@@ -98,6 +110,11 @@ int main(int argc, char **argv)
 				strcpy(temp, strtok(temp, " \n\t\r"));
 				strcpy(temp, strtok(NULL, " \n\t\r"));
 				bufferSize = atoi(temp);
+			}
+			else if(strstr(serverBuffer, "Date:")){
+				strcpy(date, serverBuffer);
+				strcpy(date, strtok(date, " \n\t\r"));
+				strcpy(date, strtok(NULL, "\r\n"));
 			}
 			//just loop through header, check relevant lines to ensure no errors, and find size of main body
 			//then just loop until there's an empty line, then start listing characters in for loop below
@@ -120,11 +137,12 @@ int main(int argc, char **argv)
 		if(strlen(serverBuffer) > 0){	//ok, so this DOESNT work, but basically
 			printf("serverbuffer now |%s|\n", serverBuffer);	//browser sockets are getting closed too quickly, requests for images are getting lost
 		}*/
+		printf("logging here, with date = |%s|, size = |%d|, domain = |%s|, and IP = |%s|\n", date, bufferSize, requestAddr, stringIP);
 		Close(serverfd);
-		Close(browserfd);
+		//Close(browserfd);
 		Close(browserreadfd);
 	}
-
+	free(stringIP);
     	exit(0);
 }
 
